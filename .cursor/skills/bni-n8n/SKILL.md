@@ -10,12 +10,14 @@ metadata:
 # BNI Brasil — n8n automation platform
 
 This skill connects to the **BNI Brasil** n8n instance at `https://n8n.bnibrasil.com.br`.
-There are two ways to talk to it, and this skill supports both:
+There are two ways to talk to it, and this skill supports both (both are configured and
+verified working):
 
-1. **n8n MCP server** (native, at `/mcp-server/http`) — preferred for tool-style access,
-   requires a dedicated **MCP Access Token**.
-2. **n8n Public REST API** (`/api/v1/...`) — works today with the provided API key; use the
-   `scripts/n8n.sh` helper.
+1. **n8n MCP server** (native, at `/mcp-server/http`) — preferred for tool-style access
+   (build/validate/run workflows via the n8n Workflow SDK). Configured in
+   `.cursor/mcp.json` with the instance MCP Access Token.
+2. **n8n Public REST API** (`/api/v1/...`) — direct read/write via the `scripts/n8n.sh`
+   helper; handy for quick queries and scripting.
 
 ## When to use
 
@@ -32,26 +34,23 @@ Use this skill when the user wants to:
 | ----------------- | ------------------------------------------ | ---------------------------------- |
 | `BNI_N8N_URL`     | `https://n8n.bnibrasil.com.br`             | Base URL of the n8n instance       |
 | `BNI_N8N_API_KEY` | (n8n public API key, see script)           | Key for the Public REST API        |
-| `BNI_N8N_MCP_TOKEN` | (MCP Access Token — see important note)  | Token for the MCP server endpoint  |
+| `BNI_N8N_MCP_TOKEN` | (n8n MCP Access Token, see script/mcp.json)| Bearer token for the MCP server    |
 
 > **Security note:** These are credentials. Prefer env vars / Cursor secrets over the
 > committed defaults, and rotate them in n8n (Settings) if exposed.
 
-### ⚠️ Important: MCP token vs. Public API key
+### Two distinct tokens — don't mix them up
 
-The token supplied for this instance is an **n8n Public API key** (`aud: public-api`). It
-authenticates the **Public REST API** perfectly, but the native **MCP server returns 401
-(audience mismatch)** for public-API keys — this is by design in n8n.
+n8n uses **different tokens per audience**, and they are not interchangeable:
 
-To use the MCP endpoint you need a dedicated **MCP Access Token**:
+- **Public REST API** → `X-N8N-API-KEY` header, a Public API key (`aud: public-api`).
+- **MCP server** → `Authorization: Bearer` header, an **MCP Access Token**
+  (`aud: mcp-server-api`), from **Settings → Instance-level MCP → Connection details →
+  Access Token**. A public-API key is rejected here with `401` (audience mismatch).
 
-1. In n8n: **Settings → Instance-level MCP → Enable MCP access** (owner/admin only).
-2. Open **Connection details → Access Token** and copy the generated MCP Access Token.
-3. Put it in `BNI_N8N_MCP_TOKEN` and in `.cursor/mcp.json` (see `references/api.md`).
+Both tokens are already configured in this skill (`scripts/` defaults and `.cursor/mcp.json`).
 
-Until then, use the **Public REST API** path below — it is fully functional.
-
-## Using the Public REST API (works now)
+## Using the Public REST API
 
 Prefer the helper script; it handles auth, base URL, and JSON pretty-printing:
 
@@ -88,25 +87,30 @@ curl -s -H "X-N8N-API-KEY: $BNI_N8N_API_KEY" \
 - **Pagination is cursor-based**: responses include `nextCursor`; pass it back as `cursor`.
   Iterate until `nextCursor` is null.
 
-## Using the MCP server (once you have an MCP Access Token)
+## Using the MCP server
 
-Register it in `.cursor/mcp.json` so Cursor exposes the `bni-n8n` MCP tools:
+The `bni-n8n` MCP server is registered in `.cursor/mcp.json` at the repo root (Streamable
+HTTP, Bearer MCP Access Token) — Cursor exposes its tools automatically. **Prefer the MCP
+tools over raw REST** for building/validating/running workflows.
 
-```json
-{
-  "mcpServers": {
-    "bni-n8n": {
-      "url": "https://n8n.bnibrasil.com.br/mcp-server/http",
-      "headers": { "Authorization": "Bearer <YOUR_N8N_MCP_TOKEN>" }
-    }
-  }
-}
-```
+Server: `n8n MCP Server` v1.1.0. Key tools include:
 
-A starter `.cursor/mcp.json` is included at the repo root — replace the token with a real
-MCP Access Token. When the MCP tools are available, prefer them over raw REST for tasks the
-MCP server exposes. To probe/debug the endpoint directly over Streamable HTTP, use
-`scripts/mcp-probe.sh` (see `references/api.md`).
+- Discovery/planning: `get_sdk_reference`, `get_suggested_nodes`, `search_nodes`,
+  `get_node_types`.
+- Workflows: `search_workflows`, `get_workflow_details`, `create_workflow_from_code`,
+  `update_workflow`, `validate_workflow`, `validate_node_config`, `publish_workflow`,
+  `unpublish_workflow`, `archive_workflow`.
+- Runs/tests: `execute_workflow`, `get_execution`, `search_executions`,
+  `prepare_test_pin_data`, `test_workflow`.
+- Data/other: `list_credentials`, `search_projects`, `search_folders`,
+  `search_data_tables`, `create_data_table`, `add_data_table_rows`, and more.
+
+> When creating/updating workflows via MCP, follow the server's required order: call
+> `get_sdk_reference` and `get_suggested_nodes` first, then `search_nodes` + `get_node_types`,
+> then `validate_workflow` before `create_workflow_from_code`. Don't guess SDK syntax.
+
+To probe/debug the endpoint directly over Streamable HTTP, use `scripts/mcp-probe.sh`
+(see `references/api.md`).
 
 ## Operational notes
 

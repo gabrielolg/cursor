@@ -8,6 +8,7 @@ Two interfaces are available:
   `X-N8N-API-KEY: <api-key>`. **Verified working** with the provided key.
 - **Native MCP server** — `https://n8n.bnibrasil.com.br/mcp-server/http`
   (Streamable HTTP), auth `Authorization: Bearer <MCP-Access-Token>`.
+  **Verified working** (`n8n MCP Server` v1.1.0) with the configured MCP Access Token.
 
 ## Public REST API — endpoints verified on this instance
 
@@ -55,15 +56,16 @@ SECRETÁRIA, DIRECTUS, GERAL, SISTEMA, CHATWOOT, CORREÇÃO, SUPERVISORA,
 ATENDENTE, SDR, SUPORTE, ERROS, ENTREVISTA, CONTRATO
 ```
 
-## MCP server setup
+## MCP server
 
-The native MCP server needs a dedicated **MCP Access Token** — a Public API key is
-rejected with `401 Unauthorized` and `WWW-Authenticate: Bearer realm="n8n MCP Server"`
-(audience mismatch, by design).
+The native MCP server is configured in `.cursor/mcp.json` at the repo root and is verified
+working (`n8n MCP Server` v1.1.0). It needs a dedicated **MCP Access Token** (`aud:
+mcp-server-api`) — a Public API key is rejected with `401 Unauthorized` and
+`WWW-Authenticate: Bearer realm="n8n MCP Server"` (audience mismatch, by design).
 
-1. In n8n: **Settings → Instance-level MCP → Enable MCP access** (owner/admin).
-2. **Connection details → Access Token** → copy the generated token.
-3. Wire it into Cursor via `.cursor/mcp.json` at the repo root:
+To rotate/replace the token: n8n **Settings → Instance-level MCP → Enable MCP access**
+(owner/admin) → **Connection details → Access Token**, then update `.cursor/mcp.json` and
+`BNI_N8N_MCP_TOKEN`.
 
 ```json
 {
@@ -76,13 +78,27 @@ rejected with `401 Unauthorized` and `WWW-Authenticate: Bearer realm="n8n MCP Se
 }
 ```
 
-4. Verify the token before wiring, using the probe script:
+Verify a token with the probe script:
 
 ```bash
 BNI_N8N_MCP_TOKEN="<token>" scripts/mcp-probe.sh initialize   # expect HTTP 200
 ```
 
-Only specific workflows are exposed to MCP: mark them **Available in MCP** in n8n.
+Only workflows marked **Available in MCP** in n8n are exposed to the MCP tools.
+
+### MCP tools exposed (from `tools/list`)
+
+`search_workflows`, `get_workflow_details`, `create_workflow_from_code`, `update_workflow`,
+`validate_workflow`, `validate_node_config`, `publish_workflow`, `unpublish_workflow`,
+`archive_workflow`, `execute_workflow`, `get_execution`, `search_executions`,
+`prepare_test_pin_data`, `test_workflow`, `list_credentials`, `search_projects`,
+`search_folders`, `search_data_tables`, `create_data_table`, `rename_data_table`,
+`add_data_table_column`, `delete_data_table_column`, `rename_data_table_column`,
+`add_data_table_rows`, `search_nodes`, `get_node_types`, `get_suggested_nodes`,
+`get_sdk_reference`.
+
+Required order for authoring workflows: `get_sdk_reference` → `get_suggested_nodes` →
+`search_nodes` → `get_node_types` → `validate_workflow` → `create_workflow_from_code`.
 
 ### Auth quick reference
 
