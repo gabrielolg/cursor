@@ -30,14 +30,27 @@ Use this skill when the user wants to:
 
 ## Configuration
 
-| Variable          | Default                                    | Description                        |
-| ----------------- | ------------------------------------------ | ---------------------------------- |
-| `BNI_N8N_URL`     | `https://n8n.bnibrasil.com.br`             | Base URL of the n8n instance       |
-| `BNI_N8N_API_KEY` | (n8n public API key, see script)           | Key for the Public REST API        |
-| `BNI_N8N_MCP_TOKEN` | (n8n MCP Access Token, see script/mcp.json)| Bearer token for the MCP server    |
+Credentials are **never hardcoded** — they are read from the environment:
 
-> **Security note:** These are credentials. Prefer env vars / Cursor secrets over the
-> committed defaults, and rotate them in n8n (Settings) if exposed.
+| Variable            | Required | Description                                            |
+| ------------------- | -------- | ------------------------------------------------------ |
+| `BNI_N8N_URL`       | no       | Base URL (default `https://n8n.bnibrasil.com.br`)      |
+| `BNI_N8N_API_KEY`   | for REST | Public REST API key (sent as `X-N8N-API-KEY`)          |
+| `BNI_N8N_MCP_TOKEN` | for MCP  | MCP Access Token (sent as `Authorization: Bearer`)     |
+
+**How to provide them (pick one):**
+
+- Export in your shell profile: `export BNI_N8N_API_KEY=... BNI_N8N_MCP_TOKEN=...`
+- Copy `.env.example` to `.env` in this skill folder and fill it in — the scripts
+  auto-load it and it is **gitignored** (never committed).
+- For Cursor **Cloud Agents**, set them as **Cursor secrets** (Dashboard → Secrets) so
+  they are injected as environment variables.
+
+`.cursor/mcp.json` references the MCP token via `${env:BNI_N8N_MCP_TOKEN}`, so it must be
+present in the environment Cursor is launched from.
+
+> **Security note:** These are credentials — never commit them. Rotate them in n8n
+> (Settings) if they are ever exposed.
 
 ### Two distinct tokens — don't mix them up
 
@@ -47,8 +60,6 @@ n8n uses **different tokens per audience**, and they are not interchangeable:
 - **MCP server** → `Authorization: Bearer` header, an **MCP Access Token**
   (`aud: mcp-server-api`), from **Settings → Instance-level MCP → Connection details →
   Access Token**. A public-API key is rejected here with `401` (audience mismatch).
-
-Both tokens are already configured in this skill (`scripts/` defaults and `.cursor/mcp.json`).
 
 ## Using the Public REST API
 

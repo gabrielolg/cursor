@@ -14,9 +14,12 @@
 #   n8n.sh PUT  "workflows/<id>" '{...}'
 #   n8n.sh DELETE "executions/<id>"
 #
-# Configuration (env vars override the defaults):
+# Configuration — provide via environment (never hardcode secrets):
 #   BNI_N8N_URL      Base URL   (default: https://n8n.bnibrasil.com.br)
-#   BNI_N8N_API_KEY  n8n public API key (sent as X-N8N-API-KEY)
+#   BNI_N8N_API_KEY  n8n public API key (sent as X-N8N-API-KEY) — REQUIRED
+#
+# You can export these in your shell, or drop them in an untracked
+# ".cursor/skills/bni-n8n/.env" file (gitignored) which this script auto-loads.
 #
 # Notes:
 #   * The path is relative to "<base>/api/v1/". A leading slash is tolerated.
@@ -26,8 +29,14 @@
 
 set -euo pipefail
 
+# Auto-load local, untracked secrets if present (never committed).
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+for envfile in "$SKILL_DIR/.env" "$SKILL_DIR/secrets.env"; do
+  [[ -f "$envfile" ]] && { set -a; . "$envfile"; set +a; }
+done
+
 BASE_URL="${BNI_N8N_URL:-https://n8n.bnibrasil.com.br}"
-API_KEY="${BNI_N8N_API_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNzFiOGU0Mi04ZGI1LTQ2ZjgtYjRkYi00OWFiNWU0YjJkZjUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiNzY1MDU5NjQtYjM1MS00NzYyLWEwNmUtNWJjYTQ5MDRjYjRkIiwiaWF0IjoxNzgzMTE0ODgwfQ.kaLw5s6il41A3FI9mcM-Yoi4RAtAdW5LBZznURQesm0}"
+API_KEY="${BNI_N8N_API_KEY:?BNI_N8N_API_KEY is not set. Export it or add it to .cursor/skills/bni-n8n/.env (see SKILL.md).}"
 
 if [[ $# -lt 2 ]]; then
   echo "Usage: n8n.sh <METHOD> <PATH> [JSON_BODY]" >&2

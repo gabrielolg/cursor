@@ -8,17 +8,26 @@
 #   mcp-probe.sh                # sends an "initialize" JSON-RPC request
 #   mcp-probe.sh tools/list     # sends the given method (no params)
 #
-# Configuration:
+# Configuration — provide via environment (never hardcode secrets):
 #   BNI_N8N_URL        Base URL (default: https://n8n.bnibrasil.com.br)
 #   BNI_N8N_MCP_TOKEN  MCP Access Token (Bearer). REQUIRED for a 200 response.
+#
+# You can export these in your shell, or drop them in an untracked
+# ".cursor/skills/bni-n8n/.env" file (gitignored) which this script auto-loads.
 #
 # Note: a public-API key will return HTTP 401 (audience mismatch). You must use
 # an MCP Access Token from n8n Settings -> Instance-level MCP -> Access Token.
 
 set -euo pipefail
 
+# Auto-load local, untracked secrets if present (never committed).
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+for envfile in "$SKILL_DIR/.env" "$SKILL_DIR/secrets.env"; do
+  [[ -f "$envfile" ]] && { set -a; . "$envfile"; set +a; }
+done
+
 BASE_URL="${BNI_N8N_URL:-https://n8n.bnibrasil.com.br}"
-TOKEN="${BNI_N8N_MCP_TOKEN:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNzFiOGU0Mi04ZGI1LTQ2ZjgtYjRkYi00OWFiNWU0YjJkZjUiLCJpc3MiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6IjZhM2ZjYzNiLWNmMDAtNDRiNy04MDFiLWZjMWRjODdmMDNmNyIsImlhdCI6MTc4NDU2MDEzNH0.9sHF1XQpYUdU2RePAvUwCo3QUqKvQqPDuYuoCv1XK0o}"
+TOKEN="${BNI_N8N_MCP_TOKEN:-}"
 METHOD="${1:-initialize}"
 
 if [[ -z "$TOKEN" ]]; then
