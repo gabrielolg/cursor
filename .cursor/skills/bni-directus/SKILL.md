@@ -25,18 +25,24 @@ Use this skill when the user wants to:
 
 ## Configuration
 
-The connection is configured with two values. Both have working defaults baked into the
-helper script, but you can override them with environment variables:
+Credentials are **never hardcoded** — they are read from the environment:
 
-| Variable             | Default                              | Description                     |
-| -------------------- | ------------------------------------ | ------------------------------- |
-| `BNI_DIRECTUS_URL`   | `https://crm.bnibrasil.com.br`       | Base URL of the Directus API    |
-| `BNI_DIRECTUS_TOKEN` | (static token, see script)           | Directus static access token    |
+| Variable             | Required | Description                                       |
+| -------------------- | -------- | ------------------------------------------------- |
+| `BNI_DIRECTUS_URL`   | no       | Base URL (default `https://crm.bnibrasil.com.br`) |
+| `BNI_DIRECTUS_TOKEN` | yes      | Directus static access token                       |
 
-> **Security note:** The static token is a credential. Prefer setting `BNI_DIRECTUS_TOKEN`
-> as an environment variable / Cursor secret rather than relying on the committed default.
-> If the committed token is ever exposed, rotate it in the Directus admin panel
-> (Settings → Access Tokens / the token's user) and update the secret.
+**How to provide them (pick one):**
+
+- Export in your shell profile: `export BNI_DIRECTUS_TOKEN=...`
+- Copy `.env.example` to `.env` in this skill folder and fill it in — the script
+  auto-loads it and it is **gitignored** (never committed).
+- For Cursor **Cloud Agents**, set it as a **Cursor secret** (Dashboard → Secrets) so it
+  is injected as an environment variable.
+
+> **Security note:** The static token is a credential — never commit it. If it is ever
+> exposed, rotate it in the Directus admin panel (Settings → Access Tokens / the token's
+> user) and update the secret.
 
 ## How to call the API
 

@@ -14,9 +14,12 @@
 #   directus.sh PATCH  "items/leads/<id>" '{"status":"qualificado"}'
 #   directus.sh DELETE "items/leads/<id>"
 #
-# Configuration (env vars override the defaults):
+# Configuration — provide via environment (never hardcode secrets):
 #   BNI_DIRECTUS_URL    Base URL   (default: https://crm.bnibrasil.com.br)
-#   BNI_DIRECTUS_TOKEN  Static token
+#   BNI_DIRECTUS_TOKEN  Static access token — REQUIRED
+#
+# You can export these in your shell, or drop them in an untracked
+# ".cursor/skills/bni-directus/.env" file (gitignored) which this script auto-loads.
 #
 # Notes:
 #   * Query-string brackets used by Directus (filter[...], aggregate[...]) are
@@ -26,8 +29,14 @@
 
 set -euo pipefail
 
+# Auto-load local, untracked secrets if present (never committed).
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+for envfile in "$SKILL_DIR/.env" "$SKILL_DIR/secrets.env"; do
+  [[ -f "$envfile" ]] && { set -a; . "$envfile"; set +a; }
+done
+
 BASE_URL="${BNI_DIRECTUS_URL:-https://crm.bnibrasil.com.br}"
-TOKEN="${BNI_DIRECTUS_TOKEN:-frKE_LRqF9YeAw3_uvtHiu6Y6dEffAN1}"
+TOKEN="${BNI_DIRECTUS_TOKEN:?BNI_DIRECTUS_TOKEN is not set. Export it or add it to .cursor/skills/bni-directus/.env (see SKILL.md).}"
 
 if [[ $# -lt 2 ]]; then
   echo "Usage: directus.sh <METHOD> <PATH> [JSON_BODY]" >&2
