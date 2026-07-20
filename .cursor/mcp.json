@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "bni-n8n": {
+      "url": "https://n8n.bnibrasil.com.br/mcp-server/http",
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNzFiOGU0Mi04ZGI1LTQ2ZjgtYjRkYi00OWFiNWU0YjJkZjUiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiNzY1MDU5NjQtYjM1MS00NzYyLWEwNmUtNWJjYTQ5MDRjYjRkIiwiaWF0IjoxNzgzMTE0ODgwfQ.kaLw5s6il41A3FI9mcM-Yoi4RAtAdW5LBZznURQesm0"
+      }
+    }
+  }
+}
